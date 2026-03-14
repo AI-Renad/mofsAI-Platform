@@ -1,129 +1,153 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import Button from './common/Button';
-// استيراد مكتبة الرسوم البيانية
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, FileText, BarChart3, Loader2, CheckCircle2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-const LOCAL_API_URL = 'http://127.0.0.1:10000/predict';
-
-export default function GenerativeMaterials() {
-  const [csvText, setCsvText] = useState<string>('');
+const GenerativeMaterials = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any | null>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [fileName, setFileName] = useState("");
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCsvText(String(reader.result ?? ''));
-      setResult(null);
-      setError(null);
-    };
-    reader.readAsText(f);
-  };
+  // --- الرابط الجديد الخاص بك على Render ---
+  const API_URL = "https://mofsai-platform-8.onrender.com/predict";
 
-  const generated = result?.generated_materials ?? [];
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  // تحضير البيانات للرسم البياني (أفضل 10 نتائج)
-  const chartData = useMemo(() => {
-    return generated.slice(0, 10).map((m: any) => ({
-      name: `Material ${m.rank}`,
-      score: m.predicted_score,
-    }));
-  }, [generated]);
-
-  const generate = async () => {
-    if (!csvText) return;
+    setFileName(file.name);
     setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(LOCAL_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv_text: csvText, n_generate: 200, top_k: 10 }),
-      });
 
-      if (!response.ok) throw new Error('فشل الاتصال بسيرفر البايثون');
-      const res = await response.json();
-      setResult(res);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Generation failed');
-    } finally {
-      setLoading(false);
-    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result;
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv_text: text }),
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+          // تحديث البيانات لعرضها في الرسوم البيانية والبطاقات
+          setData(result.generated_materials);
+        } else {
+          alert("Error: " + (result.error || "Failed to process data"));
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Could not connect to the AI server. Make sure Render is awake!");
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
-    <div className="space-y-6">
-      {/* قسم رفع الملف */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">MOFs Discovery Dashboard</h2>
-        <p className="text-sm text-slate-600 mb-4">ارفيع بيانات المواد الخام بصيغة CSV للحصول على تحليل ذكي.</p>
-
-        <input
-          type="file"
-          accept=".csv"
-          onChange={onFileChange}
-          className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700 cursor-pointer"
-        />
-
-        <div className="mt-4">
-          <Button type="button" onClick={generate} disabled={!csvText || loading}>
-            {loading ? 'جاري التحليل...' : 'بدء التوقع (Predict)'}
-          </Button>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-8 rounded-2xl text-white shadow-xl">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Generative MOF Design</h1>
+          <p className="text-slate-400">Upload your structural data to predict performance scores</p>
         </div>
-        {error && <p className="mt-3 text-sm text-red-600">⚠️ {error}</p>}
+        <div className="relative">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="csv-upload"
+          />
+          <label htmlFor="csv-upload">
+            <Button asChild variant="secondary" className="cursor-pointer hover:scale-105 transition-transform">
+              <span>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                {loading ? "Processing AI Model..." : "Upload CSV Data"}
+              </span>
+            </Button>
+          </label>
+        </div>
       </div>
 
-      {/* --- قسم الرسم البياني الجديد --- */}
-      {generated.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">مقارنة أداء أفضل 10 مواد متوقعة</h3>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ fill: '#f1f5f9' }}
-                />
-                <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#1d4ed8' : '#3b82f6'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {fileName && (
+        <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium animate-pulse">
+          <CheckCircle2 className="h-4 w-4" />
+          Active File: {fileName}
         </div>
       )}
 
-      {/* قسم البطاقات التفصيلية */}
-      {generated.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {generated.slice(0, 6).map((m: any) => (
-            <div key={m.rank} className="rounded-lg border border-slate-200 bg-slate-50 p-4 hover:border-blue-300 transition-colors">
-              <div className="flex justify-between items-start mb-2">
-                <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded">الترتيب {m.rank}</span>
-                <span className="text-sm font-bold text-slate-900">{m.predicted_score?.toFixed(4)}</span>
+      {/* Analytics Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Main Chart Card */}
+        <Card className="lg:col-span-2 shadow-md border-slate-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Predicted Performance Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            {data.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="predicted_score" radius={[4, 4, 0, 0]}>
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index < 3 ? '#2563eb' : '#94a3b8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 border-2 border-dashed rounded-xl">
+                Upload data to see visual analysis
               </div>
-              <div className="space-y-1 text-xs text-slate-600">
-                {Object.entries(m.features).slice(0, 5).map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between border-b border-slate-100 pb-1">
-                    <span className="font-mono">{k}</span>
-                    <span className="text-slate-900">{typeof v === 'number' ? v.toFixed(3) : String(v)}</span>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Performers List */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-lg">Top Candidates</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.length > 0 ? (
+                data.slice(0, 5).map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
+                        {idx + 1}
+                      </span>
+                      <span className="font-medium text-slate-700">{item.name}</span>
+                    </div>
+                    <span className="text-blue-600 font-bold">{item.predicted_score}</span>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400">No results yet</div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-}
+};
+
+export default GenerativeMaterials;

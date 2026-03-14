@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2920eccb-2b9e-4ea7-a894-bacc754cf917" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/mofsAI-main 2/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mofsAI-main 2/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/mofsAI-main 2/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mofsAI-main 2/frontend/mofsAI/src/components/GenerativeMaterials.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mofsAI-main 2/frontend/mofsAI/src/components/GenerativeMaterials.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,9 +22,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/mofsAI-main 2" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="3AuXFhT5QFWs4CkE3qxF5hhotTw" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -36,7 +34,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main"
+    "git-widget-placeholder": "<unknown>"
   }
 }]]></component>
   <component name="RecentsManager">
